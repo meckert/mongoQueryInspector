@@ -22,7 +22,7 @@ for (var i=0; i < credentials.length; i++) {
 		var watchQueries = function () {
 			data.findAllSystemProfileQueries(client, function(queries) {
 				data.callExplainOnQueries(client, queries, function(explainResult) {
-					if (explainResult && explainResult.explaination && explainResult.explaination.cursor === 'BasicCursor') {
+					if (explainResult && explainResult.explaination && explainResult.explaination.cursor === 'BasicCursor') { // move to a rules.js file, where different loggin roles can be defined
 						log.logToFile(cfg.log.path, cfg.log.fileName, explainResult.query);
 					}
 				});

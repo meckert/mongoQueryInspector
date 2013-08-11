@@ -1,35 +1,45 @@
+/* syncronous logger */
+
 var fs = require('fs'),
 	path = require('path');
+
+function _readLogFile(fullLogFilePath, query) {
+	//check if log already contains the log data before writing
+	var logFile = fs.readFileSync(fullLogFilePath).toString();
+
+	if (logFile.indexOf(query) === -1) {
+		var logEntry = 'Query without index detected: ' +  query + '\r\n';
+
+		return logEntry;
+	}
+}
+
+function _appendToLogFile(fullLogFilePath, logEntry) {
+	var log = fs.createWriteStream(fullLogFilePath, { 'flags' : 'a' });
+	
+	if (logEntry) {
+		console.log(logEntry);
+		log.end(logEntry);	
+	}
+}
 
 function logToFile(pathName, fileName, query) {
 	var fullLogFilePath = path.join(pathName, fileName);
 
-	fs.exists(fullLogFilePath, function(exists) {
-		// if log file does not exist, create it
-		if (!exists) {
-			fs.mkdir(pathName), function(err) {
-				if (err) throw err;	
-			}
-			
-			fs.writeFile(fullLogFilePath, '', function(err) {
-				if (err) throw err;
-			});
-		} else {
-			// check if log already contains the log data before writing
-			fs.readFile(fullLogFilePath, 'utf8', function(err, data) {
-				if (err) throw err;
+	var folderExists = fs.existsSync(pathName);
 
-				if (data.indexOf(query) === -1) {
-					var logEntry = 'Query without index detected: ' +  query + '\r\n';
+	if (!folderExists) {
+		fs.mkdirSync(pathName);
+	}
 
-					fs.appendFile(fullLogFilePath, logEntry, function(err) {
-						if (err) throw err;
-						console.log(logEntry);
-					});
-				}
-			});
-		}
-	});
+	var logFileExists = fs.existsSync(fullLogFilePath);
+
+	if (!logFileExists) {
+		fs.writeFileSync(fullLogFilePath, '');
+	}
+
+	var logEntry = _readLogFile(fullLogFilePath, query);
+	_appendToLogFile(fullLogFilePath, logEntry);
 }
 
 exports.logToFile = logToFile;

@@ -5,7 +5,6 @@ var data = require('./data.js'),
 // TODO:
 
 // - enable profiling on startup / set system.profile capped collection limit to 500
-// - add index suggestion to log results
 // - Do we need an index for the system.profile queries?
 // - write tests
 // - integrate socket.io
@@ -23,11 +22,12 @@ for (var i=0; i < credentials.length; i++) {
 			data.findAllSystemProfileQueries(client, function(queries) {
 				data.callExplainOnQueries(client, queries, function(explainResult) {
 					if (explainResult && explainResult.explaination && explainResult.explaination.cursor === 'BasicCursor') { // move to a rules.js file, where different loggin roles can be defined
-						log.logToFile(cfg.log.path, cfg.log.fileName, explainResult.query);
+						log.logToFile(cfg.log.path, cfg.log.fileName, 'Query without index detected: ' + explainResult.query);
 					}
 				});
 			});
-			setTimeout(watchQueries, cfg.logInterval);
+
+			setTimeout(watchQueries, cfg.log.Interval);
 		}
 		watchQueries();
 	});

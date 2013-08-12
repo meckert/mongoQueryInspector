@@ -25,14 +25,14 @@ describe('logger', function() {
 		}
 	}
 
-	afterEach(function() {
-		deleteTestLogFile();
-	});
+	// afterEach(function() {
+	// 	deleteTestLogFile();
+	// });
 
 	describe('When logging to non existent log file', function() {
-		beforeEach(function() {
-			deleteTestLogFile();
-		});
+		// beforeEach(function() {
+		// 	deleteTestLogFile();
+		// });
 
 		it('should create a log file in the path specified', function() {
 			log.logToFile(testLogPath, testLogFileName, 'logData');

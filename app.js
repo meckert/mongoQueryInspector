@@ -8,7 +8,6 @@ var data = require('./data.js'),
 // - Do we need an index for the system.profile queries?
 // - write tests
 // - integrate socket.io
-// - Implement web UI
 
 var credentials = cfg.mongo.credentials;
 

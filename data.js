@@ -45,11 +45,19 @@ function findAllSystemProfileQueries(client, callback) {
 function callExplainOnQueries(client, queries, callback) {
 	// workaround since JSON.stringify does not work with regex.
 	// e.g. JSON.stringify({a: /5/}) --> "{}"
+	
+	// TODO: needs refactoring!!!
 	function jsonToString(json) {
 		var str = "{";
 
-		for (var key in queries[query].query) {
-			str += key + ' : ' + queries[query].query[key] + ',';
+		for (var key in json) {
+			if (key === 'query' || key === 'orderby') { // TODO: make this more generic. Should work for everything else as well.
+				for (var key2 in json[key]) {
+					str += key + ' : {' + key2 + ' : ' + json[key][key2] + '},';	
+				}
+			} else {
+			    str += key + ' : ' + json[key] + ',';	
+			}
 		}
 
 		return str.substring(0, str.length - 1) + "}";

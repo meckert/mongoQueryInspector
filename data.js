@@ -47,6 +47,7 @@ function callExplainOnQueries(client, queries, callback) {
 	// e.g. JSON.stringify({a: /5/}) --> "{}"
 	
 	// TODO: needs refactoring!!!
+	/*
 	function jsonToString(json) {
 		var str = "{";
 
@@ -61,6 +62,28 @@ function callExplainOnQueries(client, queries, callback) {
 		}
 
 		return str.substring(0, str.length - 1) + "}";
+	}
+	*/
+	
+	function jsonToString(json) {
+		var str = "{";
+
+		for (var key in json) {
+			if (key === '$query' || key === '$orderby') { // TODO: make this more generic. Should work for everything else as well.
+				str += key + ' : {';
+
+				for (var key2 in json[key]) {
+					str += key2 + ' : ' + json[key][key2] + ', ';	
+				}
+
+				str = str.substring(0, str.length - 1) + '}, ';
+
+			} else {
+			    str += key + ' : ' + json[key] + ',';	
+			}
+		}
+
+		return str.substring(0, str.length - 2) + "}";
 	}
 
 	for (var query in queries) {

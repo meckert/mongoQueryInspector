@@ -19,18 +19,19 @@ In order to analyze all queries for a specific database, follow these steps:
 
 For logging and database configuration edit the [config.js](https://github.com/meckert/mongoQueryInspector/blob/master/config.js) file:
 ```
-config.log.path = 'c:\\temp'; 
-config.log.fileName = 'mongoQueryInspector.log';
-config.log.Interval = 5000;
+config.log.path = 'c:\\temp'; // The path where the log file will be created. Use '\\' when specifying the path.
+config.log.fileName = 'mongoQueryInspector.log'; // The name of the log file to be created.
+config.log.Interval = 5000; // The interval in milliseconds specifying how often the system.profile collections are analyzed.
 
 config.mongo = {};
 config.mongo.uri = '127.0.0.1';
 config.mongo.port = '27017';
+// Specify all the databases you want to analyze.
+// If you use authentication you need to add username and password. If don't use authentication, omit username and password.
 config.mongo.credentials =  [
 								{dbName : 'blog', username: 'blog', password: 'qwer'},
 								{dbName : 'enron', username: 'enron', password: 'qwer'},
 							]
-
 ```
 
 ### Usage

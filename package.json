@@ -1,6 +1,6 @@
 {
 	"name": "mongo-query-inspector",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"author": {
 		"name": "Mathias Eckert",
 		"email": "mathias.eckert@gmail.com"

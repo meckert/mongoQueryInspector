@@ -1,4 +1,8 @@
-var data = require('./data.js'),
+var express = require('express'),
+	app = express(),
+	server = require('http').createServer(app),
+	io = require('socket.io').listen(server),
+	data = require('./data.js'),
 	log = require('./logger.js'),
 	cfg = require('./config.js');
 
@@ -8,7 +12,9 @@ var data = require('./data.js'),
 // - enable profiling on startup / set system.profile capped collection limit to 500
 // - Do we need an index for the system.profile queries?
 // - write tests
-// - integrate socket.io
+
+server.listen(3000);
+app.use(express.static(__dirname + '/public/'));
 
 var credentials = cfg.mongo.credentials;
 
@@ -24,7 +30,13 @@ for (var i=0; i < credentials.length; i++) {
 					if (explainResult && explainResult.explaination && explainResult.explaination.cursor === 'BasicCursor') {
 						data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
 							var missingIndexes = data.getMissingIndexes(indexes, explainResult.queryKeys);
-							log.logToFile(cfg.log.path, cfg.log.fileName, { 'query' : explainResult.query, 'missingIndexes' : missingIndexes });
+							var logEntry = { 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
+
+							log.ToFile(cfg.log.path, cfg.log.fileName, logEntry);
+							
+							io.sockets.on('connection', function(socket) {
+								socket.emit('query', logEntry);
+							})
 						});						
 					}
 				});

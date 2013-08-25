@@ -55,4 +55,4 @@ function logToFile(pathName, fileName, logData) {
 	}
 }
 
-exports.logToFile = logToFile;
+exports.ToFile = logToFile;

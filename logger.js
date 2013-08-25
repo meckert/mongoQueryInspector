@@ -1,6 +1,8 @@
 /* syncronous logger */
 var fs = require('fs'),
-	path = require('path');
+	path = require('path'),
+	mustache = require('mustache'),
+	template = "-----------------------------\r\nQuery without index detected:\r\n-----------------------------\r\n{{&query}}\r\n### apply index on fields: {{&missingIndexes}}\r\n\r\n";
 
 function _readLogFile(fullLogFilePath) {
 	return fs.readFileSync(fullLogFilePath).toString();
@@ -30,16 +32,26 @@ function _createLogFileIfNotExists(fullLogFilePath) {
 	}
 }
 
+function _logEntryExists(fullLogFilePath, logData) {
+	var logFile = _readLogFile(fullLogFilePath);
+
+	if (logFile.indexOf(logData.query) === -1) {
+		return false;
+	}
+
+	return true;
+}
+
 function logToFile(pathName, fileName, logData) {
 	var fullLogFilePath = path.join(pathName, fileName);
 
 	_createFolderIfNotExists(pathName);
 	_createLogFileIfNotExists(fullLogFilePath);
 
-	var logFile = _readLogFile(fullLogFilePath, logData);
-
-	if (logFile.indexOf(logData) === -1) {
-		_appendToLogFile(fullLogFilePath, logData + '\r\n');
+	if (!_logEntryExists(fullLogFilePath, logData)) {
+		var logEntry = mustache.render(template, logData);
+		console.log(logEntry);
+		_appendToLogFile(fullLogFilePath, logEntry);
 	}
 }
 

@@ -17,12 +17,12 @@ function connect(hostName, port, dbName, username, password, callback) {
 	});
 }
 
-function extractQueryKeysFromQuery(query, keys) {
+function _extractQueryKeysFromQuery(query, keys) {
 	for (var key in query) {
 		if (key !== '$explain') {
 
 			if (typeof query[key] === "object" && (query[key] instanceof RegExp === false)) {
-				extractQueryKeysFromQuery(query[key], keys);
+				_extractQueryKeysFromQuery(query[key], keys);
 			} else {
 				if (keys.indexOf(key) === -1) {
 					keys.push(key);
@@ -34,7 +34,35 @@ function extractQueryKeysFromQuery(query, keys) {
 	return keys;
 }
 
-// TODO: rename function
+function getIndexesForCollection(client, collectionName, callback) {
+	var collection = new mongodb.Collection(client, collectionName);
+
+	collection.indexInformation(function(err, indexInfo) {
+		if (err) { throw err; }
+
+		var indexes = []
+
+		for (var key in indexInfo) {
+			indexes.push(indexInfo[key][0][0]);
+		}
+
+		callback(indexes);
+	});
+}
+
+function getMissingIndexes(indexes, queryKeys) {
+	var missingIndexes = [];
+
+	queryKeys.forEach(function(key) {
+		if (indexes.indexOf(key) === -1 && missingIndexes.indexOf(key) === -1) {
+			missingIndexes.push(key);
+		}
+	});
+
+	return missingIndexes;
+}
+
+// TODO: rename/refactor function
 function findAllSystemProfileQueries(client, callback) {
 	var systemProfile = new mongodb.Collection(client, 'system.profile');
 
@@ -52,8 +80,7 @@ function findAllSystemProfileQueries(client, callback) {
 
 			for (var key in query) {
 				if (key !== '$query' && key !== '$explain') {
-					var extractedKeys = extractQueryKeysFromQuery(query, []);
-					queries.push({ "collection" : collection, "query" : query, "queryKeys" : extractedKeys });
+					queries.push({ "collection" : collection, "query" : query });
 				}
 			}
 		}
@@ -67,16 +94,19 @@ function callExplainOnQueries(client, queries, callback) {
 
 		var collection = new mongodb.Collection(client, queries[query].collection);
 		var fullQuery = client.databaseName + '.' + queries[query].collection + '.find(' + JSON.stringify(queries[query].query) + ')';
-		var queryKeys = queries[query].queryKeys;
+		var extractedKeys = _extractQueryKeysFromQuery(queries[query].query, []);
 
-		(function(query, collection, fullQuery, queryKeys) {
+		(function(query, collection, fullQuery, extractedKeys) {
 			collection.find(query).explain(function(err, explaination) {
-				callback({ 'query' : fullQuery, 'explaination' : explaination, 'queryKeys' : queryKeys });
+				callback({ 'collection' : collection.collectionName, 'query' : fullQuery, 'explaination' : explaination, 'queryKeys' : extractedKeys });
 			});
-		})(queries[query].query, collection, fullQuery, queryKeys);
+		})(queries[query].query, collection, fullQuery, extractedKeys);
 	}
 }
+
 
 exports.connect = connect;
 exports.findAllSystemProfileQueries = findAllSystemProfileQueries;
 exports.callExplainOnQueries = callExplainOnQueries;
+exports.getIndexesForCollection = getIndexesForCollection;
+exports.getMissingIndexes = getMissingIndexes;

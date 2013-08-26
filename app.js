@@ -16,6 +16,12 @@ var express = require('express'),
 server.listen(3000);
 app.use(express.static(__dirname + '/public/'));
 
+var clients = {};
+
+io.sockets.on('connection', function(socket) {
+	clients[socket.id] = socket;
+});
+
 var credentials = cfg.mongo.credentials;
 
 for (var i=0; i < credentials.length; i++) {
@@ -39,10 +45,8 @@ for (var i=0; i < credentials.length; i++) {
 							var logEntry = { 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
 
 							log.ToFile(cfg.log.path, cfg.log.fileName, logEntry);
+							log.ToSockets(clients, logEntry);
 							
-							io.sockets.on('connection', function(socket) {
-								socket.emit('query', logEntry);
-							})
 						});						
 					}
 				}

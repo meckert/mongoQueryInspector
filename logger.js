@@ -55,4 +55,14 @@ function logToFile(pathName, fileName, logData) {
 	}
 }
 
+function logToSockets(clients, logData) {
+	for (var client in clients) {
+		var socket = clients[client];
+		if (socket) {
+			socket.emit('query', logData);	
+		}
+	}
+}
+
 exports.ToFile = logToFile;
+exports.ToSockets = logToSockets;

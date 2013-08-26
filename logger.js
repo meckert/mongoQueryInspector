@@ -2,7 +2,7 @@
 var fs = require('fs'),
 	path = require('path'),
 	mustache = require('mustache'),
-	template = "-----------------------------\r\nQuery without index detected:\r\n-----------------------------\r\n{{&query}}\r\n### apply index on fields: {{&missingIndexes}}\r\n\r\n";
+	template = "Query: {{&query}}\r\napply index on fields: {{&missingIndexes}}\r\n\r\n";
 
 function _readLogFile(fullLogFilePath) {
 	return fs.readFileSync(fullLogFilePath).toString();

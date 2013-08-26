@@ -18,10 +18,27 @@ function connect(hostName, port, dbName, username, password, callback) {
 }
 
 function _extractQueryKeysFromQuery(query, keys) {
-	for (var key in query) {
-		if (key !== '$explain') {
+	function isValueTypeOfObject(key, query) {
+		if (typeof query[key] === "object" && 
+			(query[key] instanceof RegExp === false)) {
+				return true;
+		}
 
-			if (typeof query[key] === "object" && (query[key] instanceof RegExp === false)) {
+		return false;
+	}
+
+	function isValueOperator(key, query) {
+		if (Object.keys(query[key]).toString().indexOf("$") > -1) {
+			return true;
+		}
+
+		return false;
+	}
+
+	for (var key in query) {
+		if (key !== '$explain') {			
+
+			if (isValueTypeOfObject(key, query) && !isValueOperator(key, query)) {
 				_extractQueryKeysFromQuery(query[key], keys);
 			} else {
 				if (keys.indexOf(key) === -1) {

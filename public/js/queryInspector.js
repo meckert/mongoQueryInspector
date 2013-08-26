@@ -4,14 +4,14 @@ window.onload = function () {
 
 	function createNewListEntry(msg) {
 		var li = document.createElement('li');
-		var headline = document.createElement('h3');
-		var query = document.createElement('h4');
-		var indexKeys = document.createElement('h4');
+		var headline = document.createElement('h4');
+		var query = document.createElement('p');
+		var indexKeys = document.createElement('p');
 
 		headline.className = "text-error";
 		headline.innerHTML = "Query without index detected";
 		query.innerHTML = msg.query;
-		indexKeys.innerHTML = "--> apply index on fields: " + msg.missingIndexes;		
+		indexKeys.innerHTML = "apply index on fields: <strong>" + msg.missingIndexes + "</strong>";		
 
 		li.appendChild(headline);
 		li.appendChild(document.createElement('hr'));

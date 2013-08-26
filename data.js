@@ -1,22 +1,6 @@
 var mongodb = require('mongodb'),
 	Db = require('mongodb').Db;
 
-function connect(hostName, port, dbName, username, password, callback) {
-	var server = new mongodb.Server(hostName, port);
-	var db = new Db(dbName, server, {safe: true});
-
-	db.open(function(err, client) {
-		if (err) {
-			throw err;
-		}
-
-		db.authenticate(username, password, function(err, result) {
-			console.log('connected to mongodb: ' + client.databaseName);
-			callback(client);
-		});
-	});
-}
-
 function _extractQueryKeysFromQuery(query, keys) {
 	function isValueTypeOfObject(key, query) {
 		if (typeof query[key] === "object" && 
@@ -51,10 +35,28 @@ function _extractQueryKeysFromQuery(query, keys) {
 	return keys;
 }
 
+function connect(hostName, port, dbName, username, password, callback) {
+	var server = new mongodb.Server(hostName, port);
+	var db = new Db(dbName, server, {safe: true});
+
+	db.open(function(err, client) {
+		if (err) {
+			throw err;
+		}
+
+		db.authenticate(username, password, function(err, result) {
+			console.log('connected to mongodb: ' + client.databaseName);
+			callback(client);
+		});
+	});
+}
+
 function getIndexesForCollection(client, collectionName, callback) {
 	var collection = new mongodb.Collection(client, collectionName);
 
-	collection.indexInformation(function(err, indexInfo) {
+	collection.indexInformation(foundIndex);
+
+	function foundIndex(err, indexInfo) {
 		if (err) { throw err; }
 
 		var indexes = []
@@ -64,7 +66,7 @@ function getIndexesForCollection(client, collectionName, callback) {
 		}
 
 		callback(indexes);
-	});
+	}
 }
 
 function getMissingIndexes(indexes, queryKeys) {
@@ -79,31 +81,29 @@ function getMissingIndexes(indexes, queryKeys) {
 	return missingIndexes;
 }
 
-// TODO: rename/refactor function
-function findAllSystemProfileQueries(client, callback) {
+function findAllSystemProfileQueryEntries(client, callback) {
 	var systemProfile = new mongodb.Collection(client, 'system.profile');
 
-	systemProfile.find({op: "query", "ns" : {$not : /system/}}).toArray(function(err, results) {
-		if (err) {
-			throw err;
-		}
+	systemProfile.find({op: "query", "ns" : {$not : /system/}}).toArray(foundSystemProfileQueryEntries);
 
-		//TODO: rename queries
-		var queries = [];
+	function foundSystemProfileQueryEntries(err, allQueryEntries) {
+		if (err) { throw err; }
 
-		for (var result in results) {
-			var collection = results[result].ns.replace(client.databaseName + '.', '');
-			var query = results[result].query;
+		var queryEntries = [];
+
+		for (var entry in allQueryEntries) {
+			var collection = allQueryEntries[entry].ns.replace(client.databaseName + '.', '');
+			var query = allQueryEntries[entry].query;
 
 			for (var key in query) {
 				if (key !== '$query' && key !== '$explain') {
-					queries.push({ "collection" : collection, "query" : query });
+					queryEntries.push({ "collection" : collection, "query" : query });
 				}
 			}
 		}
 
-		callback(queries);
-	});
+		callback(queryEntries);
+	}
 }
 
 function callExplainOnQueries(client, queries, callback) {
@@ -123,7 +123,7 @@ function callExplainOnQueries(client, queries, callback) {
 
 
 exports.connect = connect;
-exports.findAllSystemProfileQueries = findAllSystemProfileQueries;
+exports.findAllSystemProfileQueryEntries = findAllSystemProfileQueryEntries;
 exports.callExplainOnQueries = callExplainOnQueries;
 exports.getIndexesForCollection = getIndexesForCollection;
 exports.getMissingIndexes = getMissingIndexes;

@@ -19,10 +19,17 @@ function _extractQueryKeysFromQuery(query, keys) {
 		return false;
 	}
 
+	function isValueObjectId(key, query) {
+		if (Object.keys(query[key]).toString().indexOf("_bsontype") > -1) {
+			return true;
+		}
+
+		return false;
+	}
+
 	for (var key in query) {
 		if (key !== '$explain') {			
-
-			if (isValueTypeOfObject(key, query) && !isValueOperator(key, query)) {
+			if (isValueTypeOfObject(key, query) && !isValueOperator(key, query) && !isValueObjectId(key, query)) {
 				_extractQueryKeysFromQuery(query[key], keys);
 			} else {
 				if (keys.indexOf(key) === -1) {
@@ -111,6 +118,7 @@ function callExplainOnQueries(client, queries, callback) {
 
 		var collection = new mongodb.Collection(client, queries[query].collection);
 		var fullQuery = client.databaseName + '.' + queries[query].collection + '.find(' + JSON.stringify(queries[query].query) + ')';
+
 		var extractedKeys = _extractQueryKeysFromQuery(queries[query].query, []);
 
 		(function(query, collection, fullQuery, extractedKeys) {

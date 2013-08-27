@@ -46,7 +46,6 @@ for (var i=0; i < credentials.length; i++) {
 
 							log.ToFile(cfg.log.path, cfg.log.fileName, logEntry);
 							log.ToSockets(clients, logEntry);
-							
 						});						
 					}
 				}

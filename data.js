@@ -113,6 +113,36 @@ function findAllSystemProfileQueryEntries(client, callback) {
 	}
 }
 
+// TODO: refactor!
+function parseQueryEntries(queryEntries) {
+	var parsedQueryEntries = [];
+
+	for (var query in queryEntries) {
+		var parsedQueryEntry = {};
+		for (var key in queryEntries[query].query) {
+
+			if (key === "$explain") {
+				continue;
+			}
+			
+			if (key === "query" || key === "$query") {
+				parsedQueryEntry["query"] = queryEntries[query].query[key];
+				continue;
+			}
+
+			if (key === "orderby" || key === "$orderby") {
+				parsedQueryEntry["sort"] = queryEntries[query].query[key];
+				parsedQueryEntries.push({ "collection" : queryEntries[query].collection, "query" : parsedQueryEntry});
+				continue;
+			}
+
+			parsedQueryEntries.push({ "collection" : queryEntries[query].collection, "query" : queryEntries[query].query });
+		}
+	}
+		
+	return parsedQueryEntries;
+}
+
 function callExplainOnQueries(client, queries, callback) {
 	for (var query in queries) {
 
@@ -122,9 +152,23 @@ function callExplainOnQueries(client, queries, callback) {
 		var extractedKeys = _extractQueryKeysFromQuery(queries[query].query, []);
 
 		(function(query, collection, fullQuery, extractedKeys) {
-			collection.find(query).explain(function(err, explaination) {
+
+			// TODO: refactor!
+			var options = {
+			};
+
+			for (var key in query) {
+				if (key === "sort") {
+					options["sort"] = query[key];
+				}
+			}
+
+			collection.find(query, options).explain(function(err, explaination) {
+				if (err) throw err;
+
 				callback({ 'collection' : collection.collectionName, 'query' : fullQuery, 'explaination' : explaination, 'queryKeys' : extractedKeys });
 			});
+
 		})(queries[query].query, collection, fullQuery, extractedKeys);
 	}
 }
@@ -135,3 +179,4 @@ exports.findAllSystemProfileQueryEntries = findAllSystemProfileQueryEntries;
 exports.callExplainOnQueries = callExplainOnQueries;
 exports.getIndexesForCollection = getIndexesForCollection;
 exports.getMissingIndexes = getMissingIndexes;
+exports.parseQueryEntries = parseQueryEntries;

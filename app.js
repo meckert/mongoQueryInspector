@@ -18,9 +18,9 @@ app.use(express.static(__dirname + '/public/'));
 
 var clients = {};
 
-io.sockets.on('connection', function(socket) {
-	clients[socket.id] = socket;
-});
+// io.sockets.on('connection', function(socket) {
+// 	clients[socket.id] = socket;
+// });
 
 var credentials = cfg.mongo.credentials;
 
@@ -36,7 +36,10 @@ for (var i=0; i < credentials.length; i++) {
 			data.findAllSystemProfileQueryEntries(client, foundSystemProfileQueryEntries);
 
 			function foundSystemProfileQueryEntries(queryEntries) {
-				data.callExplainOnQueries(client, queryEntries, finishedExplain);
+
+				var parsedQueries = data.parseQueryEntries(queryEntries);
+
+				data.callExplainOnQueries(client, parsedQueries, finishedExplain);
 
 				function finishedExplain(explainResult) {
 					if (explainResult && explainResult.explaination && explainResult.explaination.cursor === 'BasicCursor') {

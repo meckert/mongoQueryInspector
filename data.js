@@ -125,6 +125,7 @@ function parseQueryEntries(queryEntries) {
 				continue;
 			}
 			
+			// TODO: bug - query and sort are added multiple times
 			if (key === "query" || key === "$query") {
 				parsedQueryEntry["query"] = queryEntries[query].query[key];
 				continue;

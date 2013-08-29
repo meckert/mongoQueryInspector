@@ -18,9 +18,9 @@ app.use(express.static(__dirname + '/public/'));
 
 var clients = {};
 
-// io.sockets.on('connection', function(socket) {
-// 	clients[socket.id] = socket;
-// });
+io.sockets.on('connection', function(socket) {
+	clients[socket.id] = socket;
+});
 
 var credentials = cfg.mongo.credentials;
 

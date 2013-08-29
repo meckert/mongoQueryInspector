@@ -145,13 +145,16 @@ function parseQueryEntries(queryEntries) {
 	return parsedQueryEntries;
 }
 
-function callExplainOnQueries(client, queries, callback) {
-	for (var query in queries) {
+function callExplainOnQueries(client, parsedQueries, callback) {
+	for (var key in parsedQueries) {
 
-		var collection = new mongodb.Collection(client, queries[query].collection);
-		var fullQuery = client.databaseName + '.' + queries[query].collection + '.find(' + JSON.stringify(queries[query].query) + ')';
+		var collectionName = parsedQueries[key].collection;
+		var query = parsedQueries[key].query;
 
-		var extractedKeys = _extractQueryKeysFromQuery(queries[query].query, []);
+		var collection = new mongodb.Collection(client, collectionName);
+		var fullQuery = client.databaseName + '.' + collectionName + '.find(' + JSON.stringify(query) + ')';
+
+		var extractedKeys = _extractQueryKeysFromQuery(query, []);
 
 		(function(query, collection, fullQuery, extractedKeys) {
 
@@ -171,7 +174,7 @@ function callExplainOnQueries(client, queries, callback) {
 				callback({ 'collection' : collection.collectionName, 'query' : fullQuery, 'explaination' : explaination, 'queryKeys' : extractedKeys });
 			});
 
-		})(queries[query].query, collection, fullQuery, extractedKeys);
+		})(query, collection, fullQuery, extractedKeys);
 	}
 }
 

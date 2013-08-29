@@ -52,7 +52,7 @@ function connect(hostName, port, dbName, username, password, callback) {
 		}
 
 		db.authenticate(username, password, function(err, result) {
-			console.log('connected to mongodb: ' + client.databaseName);
+			console.log('connected to mongodb: ' + client.databaseName + ' --- host: ' + client.serverConfig.host + ':' + client.serverConfig.port);
 			callback(client);
 		});
 	});
@@ -113,6 +113,7 @@ function findAllSystemProfileQueryEntries(client, callback) {
 	}
 }
 
+
 // TODO: refactor!
 function parseQueryEntries(queryEntries) {
 	var parsedQueryEntries = [];
@@ -140,7 +141,7 @@ function parseQueryEntries(queryEntries) {
 			parsedQueryEntries.push({ "collection" : queryEntries[query].collection, "query" : queryEntries[query].query });
 		}
 	}
-		
+
 	return parsedQueryEntries;
 }
 

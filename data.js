@@ -133,6 +133,24 @@ function parseQueryEntries(queryEntries) {
 			}
 
 			if (key === "orderby" || key === "$orderby") {
+
+
+			// Sorting can be acieved with option parameter sort which takes an array of sort preferences
+
+			// ``javascript
+			// {
+			// “sort”: [[‘field1’,’asc’], [‘field2’,’desc’]]
+			// }
+
+			// ``
+
+			// With single ascending field the array can be replaced with the name of the field.
+
+			// ``javascript
+			// {
+			// “sort”: “name”
+			// }
+				
 				parsedQueryEntry["sort"] = queryEntries[query].query[key];
 				parsedQueryEntries.push({ "collection" : queryEntries[query].collection, "query" : parsedQueryEntry});
 				continue;
@@ -146,10 +164,14 @@ function parseQueryEntries(queryEntries) {
 }
 
 function callExplainOnQueries(client, parsedQueries, callback) {
+	// console.log(parsedQueries);
+
 	for (var key in parsedQueries) {
 
 		var collectionName = parsedQueries[key].collection;
-		var query = parsedQueries[key].query;
+		var query = parsedQueries[key].query.query || parsedQueries[key].query;
+
+		// console.log(query);
 
 		var collection = new mongodb.Collection(client, collectionName);
 		var fullQuery = client.databaseName + '.' + collectionName + '.find(' + JSON.stringify(query) + ')';
@@ -162,11 +184,17 @@ function callExplainOnQueries(client, parsedQueries, callback) {
 			var options = {
 			};
 
-			for (var key in query) {
-				if (key === "sort") {
-					options["sort"] = query[key];
-				}
+			if (parsedQueries[key].query.sort) {
+				options["sort"] = parsedQueries[key].query.sort;
 			}
+			// for (var key in parsedQueries[key]) {
+			// 	console.log(key);
+
+			// 	if (key === "sort") {
+			// 		options["sort"] = query[key];
+			// 	}
+			// }
+
 
 			collection.find(query, options).explain(function(err, explaination) {
 				if (err) throw err;

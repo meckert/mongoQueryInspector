@@ -42,6 +42,8 @@ function _extractQueryKeysFromQuery(query, keys) {
 	return keys;
 }
 
+
+
 function connect(hostName, port, dbName, username, password, callback) {
 	var server = new mongodb.Server(hostName, port);
 	var db = new Db(dbName, server, {safe: true});
@@ -113,62 +115,66 @@ function findAllSystemProfileQueryEntries(client, callback) {
 	}
 }
 
-
-// TODO: refactor!
 function parseQueryEntries(queryEntries) {
 	var parsedQueryEntries = [];
 
-	for (var query in queryEntries) {
+	for (var queryEntry in queryEntries) {
 		var parsedQueryEntry = {};
+		var query = queryEntries[queryEntry].query;
 
-		// rename stuff
-		for (var key in queryEntries[query].query) {
-
+		for (var key in query) {
 			if (key === "$explain") {
 				continue;
 			}
 			
 			// TODO: bug - query and sort are added multiple times
 			if (key === "query" || key === "$query") {
-				parsedQueryEntry["query"] = queryEntries[query].query[key];
+				parsedQueryEntry["query"] = query[key];
 				continue;
 			}
 
 			if (key === "orderby" || key === "$orderby") {				
-				parsedQueryEntry["sort"] = queryEntries[query].query[key];
-				parsedQueryEntries.push({ "collection" : queryEntries[query].collection, "query" : parsedQueryEntry});
+				parsedQueryEntry["sort"] = query[key];
+				parsedQueryEntries.push({ "collection" : queryEntries[queryEntry].collection, "query" : parsedQueryEntry});
 				continue;
 			}
 
-			parsedQueryEntries.push({ "collection" : queryEntries[query].collection, "query" : queryEntries[query].query });
+			parsedQueryEntries.push({ "collection" : queryEntries[queryEntry].collection, "query" : query });
 		}
 	}
 
 	return parsedQueryEntries;
 }
 
-function _createSortOptions(sortEntries) {
-	// options format: { "sort" : [['field1', 'asc'], ['field2', 'desc']] }
-	var sortFields = [];
+function callExplainOnQueries(client, parsedQueries, callback) {
+	function createSortOptions(sortEntries) {
+		// options format: { "sort" : [['field1', 'asc'], ['field2', 'desc']] }
+		var sortFields = [];
 
-	for (var sortField in sortEntries) {
-		var innerArray = [];
-		innerArray.push(sortField);
+		for (var sortField in sortEntries) {
+			var innerArray = [];
+			innerArray.push(sortField);
 
-		var sortOrderString = sortEntries[sortField] === 1 ? "asc" : "desc";
+			var sortOrderString = sortEntries[sortField] === 1 ? "asc" : "desc";
 
-		innerArray.push(sortOrderString);
-		sortFields.push(innerArray);
+			innerArray.push(sortOrderString);
+			sortFields.push(innerArray);
+		}
+
+		return sortFields;
 	}
 
-	return sortFields;
-}
+	function addSortKeysToExtractedKeys(sortQuery, extractedKeys) {
+		var sortKeys = Object.keys(sortQuery);
+			sortKeys.forEach(function(key) {
+				extractedKeys.push(key);	
+		});
+	}
 
-function callExplainOnQueries(client, parsedQueries, callback) {
-	for (var key in parsedQueries) {
+	for (var parsedQuery in parsedQueries) {
 
-		var collectionName = parsedQueries[key].collection;
-		var query = parsedQueries[key].query.query || parsedQueries[key].query;
+		var collectionName = parsedQueries[parsedQuery].collection;
+		var query = parsedQueries[parsedQuery].query.query || parsedQueries[parsedQuery].query;
 		var collection = new mongodb.Collection(client, collectionName);
 		var fullQuery = client.databaseName + '.' + collectionName + '.find(' + JSON.stringify(query) + ')';
 
@@ -176,22 +182,17 @@ function callExplainOnQueries(client, parsedQueries, callback) {
 
 		(function(query, collection, fullQuery, extractedKeys) {
 			var options = {};
+			var sortQuery = parsedQueries[parsedQuery].query.sort;
 
-			if (parsedQueries[key].query.sort) {
-				options["sort"] = _createSortOptions(parsedQueries[key].query.sort);
-				fullQuery += ".sort(" + JSON.stringify(parsedQueries[key].query.sort) + ")";
-				
-				// add sort keys to extractedKeys in order to determine missing indexes for sorting
-				var sortKeys = Object.keys(parsedQueries[key].query.sort);
-				sortKeys.forEach(function(key) {
-					extractedKeys.push(key);	
-				});
+			if (sortQuery) {
+				options["sort"] = createSortOptions(sortQuery);
+				fullQuery += ".sort(" + JSON.stringify(sortQuery) + ")";
+				addSortKeysToExtractedKeys(sortQuery, extractedKeys);
 			}
 
 			collection.find(query, options).explain(function(err, explaination) {
 				if (err) throw err;
 
-				console.log(extractedKeys);
 				callback({ 'collection' : collection.collectionName, 'query' : fullQuery, 'explaination' : explaination, 'queryKeys' : extractedKeys });
 			});
 

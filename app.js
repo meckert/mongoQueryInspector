@@ -8,9 +8,6 @@ var express = require('express'),
 
 // TODO:
 
-// - use "allPlans" from explain result
-// - enable profiling on startup / set system.profile capped collection limit to 500
-// - Do we need an index for the system.profile queries?
 // - write tests / fix tests
 
 server.listen(3000);
@@ -42,13 +39,20 @@ for (var i=0; i < credentials.length; i++) {
 				data.callExplainOnQueries(client, parsedQueries, finishedExplain);
 
 				function finishedExplain(explainResult) {
-					if (explainResult && explainResult.explaination && explainResult.explaination.cursor === 'BasicCursor') {
-						data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
-							var missingIndexes = data.getMissingIndexes(indexes, explainResult.queryKeys);
-							var logEntry = { 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
+					if (explainResult && explainResult.explaination) {
 
-							log.ToFile(cfg.log.path, cfg.log.fileName, logEntry);
-							log.ToSockets(clients, logEntry);
+						explainResult.explaination.allPlans.forEach(function(plan) {
+							if (plan.cursor === 'BasicCursor') {
+								data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
+									var missingIndexes = data.getMissingIndexes(indexes, explainResult.queryKeys);
+									var logEntry = { 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
+
+									log.ToFile(cfg.log.path, cfg.log.fileName, logEntry);
+									log.ToSockets(clients, logEntry);
+								});	
+							}
+
+
 						});						
 					}
 				}

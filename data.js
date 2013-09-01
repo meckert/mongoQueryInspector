@@ -12,7 +12,7 @@ function _extractQueryKeysFromQuery(query, keys) {
 	}
 
 	function isValueOperator(key, query) {
-		if (Object.keys(query[key]).toString().indexOf("$") > -1) {
+		if (query[key] !== null && Object.keys(query[key]).toString().indexOf("$") > -1) {
 			return true;
 		}
 
@@ -20,7 +20,7 @@ function _extractQueryKeysFromQuery(query, keys) {
 	}
 
 	function isValueObjectId(key, query) {
-		if (Object.keys(query[key]).toString().indexOf("_bsontype") > -1) {
+		if (query[key] !== null && Object.keys(query[key]).toString().indexOf("_bsontype") > -1) {
 			return true;
 		}
 

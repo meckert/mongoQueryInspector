@@ -2,7 +2,9 @@
 var fs = require('fs'),
 	path = require('path'),
 	mustache = require('mustache'),
-	template = "Query: {{&query}}\r\napply index on fields: {{&missingIndexes}}\r\n\r\n";
+	cfg = require('./config.js'),
+	template = "Query: {{&query}}\r\napply index on fields: {{&missingIndexes}}\r\n\r\n",
+	logEntries = [];
 
 function _readLogFile(fullLogFilePath) {
 	return fs.readFileSync(fullLogFilePath).toString();
@@ -35,22 +37,32 @@ function _createLogFileIfNotExists(fullLogFilePath) {
 function _logEntryExists(fullLogFilePath, logData) {
 	var logFile = _readLogFile(fullLogFilePath);
 
-	if (logFile.indexOf(logData.query) === -1) {
-		return false;
+	if (logData && logEntries.length === 0) {
+		logEntries.push({ "collection": logData.collectionName, "keys": logData.missingIndexes });
 	}
 
-	return true;
+	// { collection: 'blog', keys: 'a,b,c'}
+	var exists = logEntries.some(function(element, index, array) {
+		if (element.collection === logData.collectionName && element.keys.toString() === logData.missingIndexes.toString()) {
+			return true;
+		}
+	});
+
+	if (exists) { return true; }
+
+	return false;
 }
 
-function logToFile(pathName, fileName, logData) {
-	var fullLogFilePath = path.join(pathName, fileName);
+function logToFile(logData) {
+	var fullLogFilePath = path.join(cfg.log.path, cfg.log.fileName);
 
-	_createFolderIfNotExists(pathName);
+	_createFolderIfNotExists(cfg.log.path);
 	_createLogFileIfNotExists(fullLogFilePath);
 
 	if (!_logEntryExists(fullLogFilePath, logData)) {
+		logEntries.push({ "collection": logData.collectionName, "keys": logData.missingIndexes });
+
 		var logEntry = mustache.render(template, logData);
-		console.log(logEntry);
 		_appendToLogFile(fullLogFilePath, logEntry);
 	}
 }
@@ -64,5 +76,5 @@ function logToSockets(clients, logData) {
 	}
 }
 
-exports.ToFile = logToFile;
-exports.ToSockets = logToSockets;
+exports.toFile = logToFile;
+exports.toSockets = logToSockets;

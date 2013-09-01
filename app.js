@@ -45,14 +45,12 @@ for (var i=0; i < credentials.length; i++) {
 							if (plan.cursor === 'BasicCursor') {
 								data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
 									var missingIndexes = data.getMissingIndexes(indexes, explainResult.queryKeys);
-									var logEntry = { 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
+									var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
 
-									log.ToFile(cfg.log.path, cfg.log.fileName, logEntry);
-									log.ToSockets(clients, logEntry);
+									log.toFile(logEntry);
+									log.toSockets(clients, logEntry);
 								});	
 							}
-
-
 						});						
 					}
 				}

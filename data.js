@@ -42,8 +42,6 @@ function _extractQueryKeysFromQuery(query, keys) {
 	return keys;
 }
 
-
-
 function connect(hostName, port, dbName, username, password, callback) {
 	var server = new mongodb.Server(hostName, port);
 	var db = new Db(dbName, server, {safe: true});

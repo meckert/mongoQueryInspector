@@ -120,6 +120,8 @@ function parseQueryEntries(queryEntries) {
 
 	for (var query in queryEntries) {
 		var parsedQueryEntry = {};
+
+		// rename stuff
 		for (var key in queryEntries[query].query) {
 
 			if (key === "$explain") {
@@ -132,25 +134,7 @@ function parseQueryEntries(queryEntries) {
 				continue;
 			}
 
-			if (key === "orderby" || key === "$orderby") {
-
-
-			// Sorting can be acieved with option parameter sort which takes an array of sort preferences
-
-			// ``javascript
-			// {
-			// “sort”: [[‘field1’,’asc’], [‘field2’,’desc’]]
-			// }
-
-			// ``
-
-			// With single ascending field the array can be replaced with the name of the field.
-
-			// ``javascript
-			// {
-			// “sort”: “name”
-			// }
-				
+			if (key === "orderby" || key === "$orderby") {				
 				parsedQueryEntry["sort"] = queryEntries[query].query[key];
 				parsedQueryEntries.push({ "collection" : queryEntries[query].collection, "query" : parsedQueryEntry});
 				continue;
@@ -163,42 +147,51 @@ function parseQueryEntries(queryEntries) {
 	return parsedQueryEntries;
 }
 
-function callExplainOnQueries(client, parsedQueries, callback) {
-	// console.log(parsedQueries);
+function _createSortOptions(sortEntries) {
+	// options format: { "sort" : [['field1', 'asc'], ['field2', 'desc']] }
+	var sortFields = [];
 
+	for (var sortField in sortEntries) {
+		var innerArray = [];
+		innerArray.push(sortField);
+
+		var sortOrderString = sortEntries[sortField] === 1 ? "asc" : "desc";
+
+		innerArray.push(sortOrderString);
+		sortFields.push(innerArray);
+	}
+
+	return sortFields;
+}
+
+function callExplainOnQueries(client, parsedQueries, callback) {
 	for (var key in parsedQueries) {
 
 		var collectionName = parsedQueries[key].collection;
 		var query = parsedQueries[key].query.query || parsedQueries[key].query;
-
-		// console.log(query);
-
 		var collection = new mongodb.Collection(client, collectionName);
 		var fullQuery = client.databaseName + '.' + collectionName + '.find(' + JSON.stringify(query) + ')';
 
 		var extractedKeys = _extractQueryKeysFromQuery(query, []);
 
 		(function(query, collection, fullQuery, extractedKeys) {
-
-			// TODO: refactor!
-			var options = {
-			};
+			var options = {};
 
 			if (parsedQueries[key].query.sort) {
-				options["sort"] = parsedQueries[key].query.sort;
+				options["sort"] = _createSortOptions(parsedQueries[key].query.sort);
+				fullQuery += ".sort(" + JSON.stringify(parsedQueries[key].query.sort) + ")";
+				
+				// add sort keys to extractedKeys in order to determine missing indexes for sorting
+				var sortKeys = Object.keys(parsedQueries[key].query.sort);
+				sortKeys.forEach(function(key) {
+					extractedKeys.push(key);	
+				});
 			}
-			// for (var key in parsedQueries[key]) {
-			// 	console.log(key);
-
-			// 	if (key === "sort") {
-			// 		options["sort"] = query[key];
-			// 	}
-			// }
-
 
 			collection.find(query, options).explain(function(err, explaination) {
 				if (err) throw err;
 
+				console.log(extractedKeys);
 				callback({ 'collection' : collection.collectionName, 'query' : fullQuery, 'explaination' : explaination, 'queryKeys' : extractedKeys });
 			});
 

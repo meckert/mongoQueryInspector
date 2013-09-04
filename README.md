@@ -15,6 +15,11 @@ In order to analyze all queries for a specific database, follow these steps:
 2. Open fire! Start using your application.
 
 
+### Installation
+
+1. clone the repository
+2. use npm install
+
 ### Configuration
 
 For logging and database configuration edit the [config.js](https://github.com/meckert/mongoQueryInspector/blob/master/config.js) file:

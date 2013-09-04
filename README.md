@@ -18,7 +18,10 @@ In order to analyze all queries for a specific database, follow these steps:
 ### Installation
 
 1. clone the repository
-2. use npm install
+2. use npm install:
+```
+npm install
+```
 
 ### Configuration
 

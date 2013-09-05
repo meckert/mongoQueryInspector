@@ -1,4 +1,4 @@
-## mongoQueryInspector (v0.1.0-beta)
+## mongoQueryInspector (v0.2.3-beta)
 Inspect mongoDB queries to find queries not using an index.
 
 mongoQueryInspector is written for [Node](http://www.nodejs.org/).

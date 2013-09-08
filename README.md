@@ -1,4 +1,4 @@
-## mongoQueryInspector (v0.1.0-beta)
+## mongoQueryInspector (v0.2.3-beta)
 Inspect mongoDB queries to find queries not using an index.
 
 mongoQueryInspector is written for [Node](http://www.nodejs.org/).
@@ -14,6 +14,14 @@ In order to analyze all queries for a specific database, follow these steps:
 
 2. Open fire! Start using your application.
 
+
+### Installation
+
+1. clone the repository
+2. use npm install:
+```
+npm install
+```
 
 ### Configuration
 

@@ -3,7 +3,6 @@ var config = {};
 config.log = {};
 config.log.path = 'c:\\temp';
 config.log.fileName = 'mongoQueryInspector.log';
-config.log.Interval = 5000;
 
 config.mongo = {};
 config.mongo.uri = '127.0.0.1';

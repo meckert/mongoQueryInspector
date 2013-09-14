@@ -1,23 +1,10 @@
-var express = require('express'),
-	app = express(),
-	server = require('http').createServer(app),
-	io = require('socket.io').listen(server),
-	data = require('./data.js'),
+var data = require('./data.js'),
 	log = require('./logger.js'),
 	cfg = require('./config.js');
 
 // TODO:
 
 // - write tests / fix tests
-
-server.listen(3000);
-app.use(express.static(__dirname + '/public/'));
-
-var clients = {};
-
-io.sockets.on('connection', function(socket) {
-	clients[socket.id] = socket;
-});
 
 var credentials = cfg.mongo.credentials;
 
@@ -29,35 +16,29 @@ for (var i=0; i < credentials.length; i++) {
 	data.connect(cfg.mongo.uri, cfg.mongo.port, dbName, username, password, connected);
 
 	function connected(client) {
-		function watchQueries() {
-			data.findAllSystemProfileQueryEntries(client, foundSystemProfileQueryEntries);
+		data.findAllSystemProfileQueryEntries(client, foundSystemProfileQueryEntries);
 
-			function foundSystemProfileQueryEntries(queryEntries) {
+		function foundSystemProfileQueryEntries(queryEntries) {
 
-				var parsedQueries = data.parseQueryEntries(queryEntries);
+			var parsedQueries = data.parseQueryEntries(queryEntries);
 
-				data.callExplainOnQueries(client, parsedQueries, finishedExplain);
+			data.callExplainOnQueries(client, parsedQueries, finishedExplain);
 
-				function finishedExplain(explainResult) {
-					if (explainResult && explainResult.explaination) {
+			function finishedExplain(explainResult) {
+				if (explainResult && explainResult.explaination) {
 
-						explainResult.explaination.allPlans.forEach(function(plan) {
-							if (plan.cursor === 'BasicCursor') {
-								data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
-									var missingIndexes = data.getMissingIndexes(indexes, explainResult.queryKeys);
-									var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
+					explainResult.explaination.allPlans.forEach(function(plan) {
+						if (plan.cursor === 'BasicCursor') {
+							data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
+								var missingIndexes = data.getMissingIndexes(indexes, explainResult.queryKeys);
+								var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
 
-									log.toFile(logEntry);
-									log.toSockets(clients, logEntry);
-								});	
-							}
-						});						
-					}
+								log.toFile(logEntry);
+							});	
+						}
+					});						
 				}
 			}
-
-			setTimeout(watchQueries, cfg.log.Interval);
 		}
-		watchQueries();
 	}
 }

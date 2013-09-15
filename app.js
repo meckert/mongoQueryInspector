@@ -1,12 +1,26 @@
 var data = require('./data.js'),
 	log = require('./logger.js'),
-	cfg = require('./config.js');
-
-// TODO:
-
-// - write tests / fix tests
+	cfg = require('./config.js'),
+	async = require('async');
 
 var credentials = cfg.mongo.credentials;
+var finishedLogging = false;
+
+var q = async.queue(function(task, callback) {
+	task(function(result) {
+		callback(result);
+	});
+}, 1);
+
+q.drain = function() {
+	setInterval(function() {
+		if (finishedLogging) {
+			console.log('processing finished');
+			data.closeAllDbConnections();
+			clearInterval(this);
+		}
+	}, 1000);
+}
 
 for (var i=0; i < credentials.length; i++) {
 	var dbName = credentials[i].dbName || '';
@@ -19,12 +33,12 @@ for (var i=0; i < credentials.length; i++) {
 		data.findAllSystemProfileQueryEntries(client, foundSystemProfileQueryEntries);
 
 		function foundSystemProfileQueryEntries(queryEntries) {
-
 			var parsedQueries = data.parseQueryEntries(queryEntries);
 
-			data.callExplainOnQueries(client, parsedQueries, finishedExplain);
+			data.callExplainOnQueries(client, parsedQueries, q, finishedExplain);
 
 			function finishedExplain(explainResult) {
+				finishedLogging = false;
 				if (explainResult && explainResult.explaination) {
 
 					explainResult.explaination.allPlans.forEach(function(plan) {
@@ -34,6 +48,7 @@ for (var i=0; i < credentials.length; i++) {
 								var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
 
 								log.toFile(logEntry);
+								finishedLogging = true;
 							});	
 						}
 					});						

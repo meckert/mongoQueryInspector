@@ -1,5 +1,6 @@
 var mongodb = require('mongodb'),
-	Db = require('mongodb').Db;
+	Db = require('mongodb').Db,
+	dbConnections = [];
 
 function _extractQueryKeysFromQuery(query, keys) {
 	function isValueTypeOfObject(key, query) {
@@ -42,6 +43,12 @@ function _extractQueryKeysFromQuery(query, keys) {
 	return keys;
 }
 
+function closeAllDbConnections() {
+	for (var i = 0; i < dbConnections.length; i++) {
+		dbConnections[i].close();
+	};
+}
+
 function connect(hostName, port, dbName, username, password, callback) {
 	var server = new mongodb.Server(hostName, port);
 	var db = new Db(dbName, server, {safe: true});
@@ -56,6 +63,8 @@ function connect(hostName, port, dbName, username, password, callback) {
 			callback(client);
 		});
 	});
+
+	dbConnections.push(db);
 }
 
 function getIndexesForCollection(client, collectionName, callback) {
@@ -143,7 +152,7 @@ function parseQueryEntries(queryEntries) {
 	return parsedQueryEntries;
 }
 
-function callExplainOnQueries(client, parsedQueries, callback) {
+function callExplainOnQueries(client, parsedQueries, q, callback) {
 	function createSortOptions(sortEntries) {
 		// options format: { "sort" : [['field1', 'asc'], ['field2', 'desc']] }
 		var sortFields = [];
@@ -187,11 +196,15 @@ function callExplainOnQueries(client, parsedQueries, callback) {
 				addSortKeysToExtractedKeys(sortQuery, extractedKeys);
 			}
 
-			collection.find(query, options).explain(function(err, explaination) {
-				if (err) throw err;
+			function getExplainResult(fn) {
+				collection.find(query, options).explain(function(err, explaination) {
+					if (err) throw err;
 
-				callback({ 'collection' : collection.collectionName, 'query' : fullQuery, 'explaination' : explaination, 'queryKeys' : extractedKeys });
-			});
+					fn({ 'collection' : collection.collectionName, 'query' : fullQuery, 'explaination' : explaination, 'queryKeys' : extractedKeys });
+				});
+			}
+
+			q.push(getExplainResult, callback);
 
 		})(query, collection, fullQuery, extractedKeys);
 	}
@@ -199,6 +212,7 @@ function callExplainOnQueries(client, parsedQueries, callback) {
 
 
 exports.connect = connect;
+exports.closeAllDbConnections = closeAllDbConnections;
 exports.findAllSystemProfileQueryEntries = findAllSystemProfileQueryEntries;
 exports.callExplainOnQueries = callExplainOnQueries;
 exports.getIndexesForCollection = getIndexesForCollection;

@@ -152,6 +152,14 @@ function parseQueryEntries(queryEntries) {
 	return parsedQueryEntries;
 }
 
+function getCollectionObjectsCount(client, collectionName, callback) {
+	var collection = new mongodb.Collection(client, collectionName);
+
+	collection.count(function(err, count) {
+		callback(count);
+	});
+}
+
 function callExplainOnQueries(client, parsedQueries, q, callback) {
 	function createSortOptions(sortEntries) {
 		// options format: { "sort" : [['field1', 'asc'], ['field2', 'desc']] }
@@ -218,3 +226,4 @@ exports.callExplainOnQueries = callExplainOnQueries;
 exports.getIndexesForCollection = getIndexesForCollection;
 exports.getMissingIndexes = getMissingIndexes;
 exports.parseQueryEntries = parseQueryEntries;
+exports.getCollectionObjectsCount = getCollectionObjectsCount;

@@ -22,6 +22,15 @@ q.drain = function() {
 	}, 1000);
 }
 
+// TODO: refactor, use count...
+function wasIndexUsed(explainResult) {
+	if (explainResult.explaination.cursor === 'BasicCursor') {
+		return false;
+	}
+
+	return true;
+}
+
 for (var i=0; i < credentials.length; i++) {
 	var dbName = credentials[i].dbName || '';
 	var username = credentials[i].username || '';
@@ -39,19 +48,14 @@ for (var i=0; i < credentials.length; i++) {
 
 			function finishedExplain(explainResult) {
 				finishedLogging = false;
-				if (explainResult && explainResult.explaination) {
+				if (!wasIndexUsed(explainResult)) {
+					data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
+						var missingIndexes = data.getMissingIndexes(indexes, explainResult.queryKeys);
+						var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
 
-					explainResult.explaination.allPlans.forEach(function(plan) {
-						if (plan.cursor === 'BasicCursor') {
-							data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
-								var missingIndexes = data.getMissingIndexes(indexes, explainResult.queryKeys);
-								var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
-
-								log.toFile(logEntry);
-								finishedLogging = true;
-							});	
-						}
-					});						
+						log.toFile(logEntry);
+						finishedLogging = true;
+					});	
 				}
 			}
 		}

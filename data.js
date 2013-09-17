@@ -152,7 +152,7 @@ function parseQueryEntries(queryEntries) {
 	return parsedQueryEntries;
 }
 
-function getCollectionObjectsCount(client, collectionName, callback) {
+function getCollectionDocumentsCount(client, collectionName, callback) {
 	var collection = new mongodb.Collection(client, collectionName);
 
 	collection.count(function(err, count) {
@@ -226,4 +226,4 @@ exports.callExplainOnQueries = callExplainOnQueries;
 exports.getIndexesForCollection = getIndexesForCollection;
 exports.getMissingIndexes = getMissingIndexes;
 exports.parseQueryEntries = parseQueryEntries;
-exports.getCollectionObjectsCount = getCollectionObjectsCount;
+exports.getCollectionDocumentsCount = getCollectionDocumentsCount;

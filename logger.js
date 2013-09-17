@@ -34,12 +34,9 @@ function _createLogFileIfNotExists(fullLogFilePath) {
 	}
 }
 
-// TODO: check logfile for existing entries
-function _logEntryExists(fullLogFilePath, logData) {
-	var logFile = _readLogFile(fullLogFilePath);
-
+function _logEntryExists(logData) {
 	if (logData && logEntries.length === 0) {
-		logEntries.push({ "collection": logData.collectionName, "keys": logData.missingIndexes });
+		return false;
 	}
 
 	// { collection: 'blog', keys: 'a,b,c'}
@@ -60,7 +57,7 @@ function logToFile(logData) {
 	_createFolderIfNotExists(cfg.log.path);
 	_createLogFileIfNotExists(fullLogFilePath);
 
-	if (!_logEntryExists(fullLogFilePath, logData)) {
+	if (!_logEntryExists(logData)) {
 		logEntries.push({ "collection": logData.collectionName, "keys": logData.missingIndexes });
 
 		var logEntry = mustache.render(template, logData);

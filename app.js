@@ -22,13 +22,13 @@ q.drain = function() {
 	}, 1000);
 }
 
-// TODO: refactor, use count...
-function wasIndexUsed(explainResult) {
-	if (explainResult.explaination.cursor === 'BasicCursor') {
-		return false;
+
+function queryPerformedFullTableScan(explainResult, documentCount) {
+	if (explainResult.explaination.cursor === 'BasicCursor' || explainResult.explaination.nscannedObjects === documentCount) {
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 for (var i=0; i < credentials.length; i++) {
@@ -43,19 +43,25 @@ for (var i=0; i < credentials.length; i++) {
 
 		function foundSystemProfileQueryEntries(queryEntries) {
 			var parsedQueries = data.parseQueryEntries(queryEntries);
-
+			
 			data.callExplainOnQueries(client, parsedQueries, q, finishedExplain);
 
 			function finishedExplain(explainResult) {
 				finishedLogging = false;
-				if (!wasIndexUsed(explainResult)) {
-					data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
-						var missingIndexes = data.getMissingIndexes(indexes, explainResult.queryKeys);
-						var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
 
-						log.toFile(logEntry);
-						finishedLogging = true;
-					});	
+				data.getCollectionDocumentsCount(client, explainResult.collection, countResult);
+
+				function countResult(documentCount) {
+
+					if (queryPerformedFullTableScan(explainResult, documentCount)) {
+						data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
+							var missingIndexes = data.getMissingIndexes(indexes, explainResult.queryKeys);
+							var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
+
+							log.toFile(logEntry);
+							finishedLogging = true;
+						});	
+					}
 				}
 			}
 		}

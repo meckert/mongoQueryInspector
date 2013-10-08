@@ -1,20 +1,29 @@
 var data = require('./data.js'),
+	inspector = require('./inspector.js'),
 	log = require('./logger.js'),
 	cfg = require('./config.js'),
 	async = require('async');
 
-var credentials = cfg.mongo.credentials;
-var finishedLogging = false;
+// TODO:
 
-var q = async.queue(function(task, callback) {
+// - write more tests/fix tests
+// - update readme file
+// - better logging
+// - logging for teamcity
+
+var dbs = cfg.mongo.dbs;
+var finishedWork = false;
+
+var queue = async.queue(function(task, callback) {
 	task(function(result) {
-		callback(result);
+		return callback(result);
 	});
 }, 1);
 
-q.drain = function() {
+// using queue to makes sure that db connections are closed after all async work is done.
+queue.drain = function() {
 	setInterval(function() {
-		if (finishedLogging) {
+		if (finishedWork) {
 			console.log('processing finished');
 			data.closeAllDbConnections();
 			clearInterval(this);
@@ -22,19 +31,10 @@ q.drain = function() {
 	}, 1000);
 }
 
-
-function queryPerformedFullTableScan(explainResult, documentCount) {
-	if (explainResult.explaination.cursor === 'BasicCursor' || explainResult.explaination.nscannedObjects === documentCount) {
-		return true;
-	}
-
-	return false;
-}
-
-for (var i=0; i < credentials.length; i++) {
-	var dbName = credentials[i].dbName || '';
-	var username = credentials[i].username || '';
-	var password = credentials[i].password || '';
+for (var i=0; i < dbs.length; i++) {
+	var dbName = dbs[i].dbName || '';
+	var username = dbs[i].username || '';
+	var password = dbs[i].password || '';
 
 	data.connect(cfg.mongo.uri, cfg.mongo.port, dbName, username, password, connected);
 
@@ -42,26 +42,27 @@ for (var i=0; i < credentials.length; i++) {
 		data.findAllSystemProfileQueryEntries(client, foundSystemProfileQueryEntries);
 
 		function foundSystemProfileQueryEntries(queryEntries) {
-			var parsedQueries = data.parseQueryEntries(queryEntries);
+			var parsedQueries = inspector.parseQueryEntries(queryEntries);
 			
-			data.callExplainOnQueries(client, parsedQueries, q, finishedExplain);
+			data.callExplainOnQueries(client, parsedQueries, queue, finishedExplain);
 
 			function finishedExplain(explainResult) {
-				finishedLogging = false;
+				finishedWork = false;
 
 				data.getCollectionDocumentsCount(client, explainResult.collection, countResult);
 
 				function countResult(documentCount) {
-
-					if (queryPerformedFullTableScan(explainResult, documentCount)) {
+					if (inspector.queryPerformedFullTableScan(explainResult, documentCount)) {
 						data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
-							var missingIndexes = data.getMissingIndexes(indexes, explainResult.queryKeys);
+							var missingIndexes = inspector.getMissingIndexes(indexes, explainResult.queryKeys);
 							var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
 
 							log.toFile(logEntry);
-							finishedLogging = true;
+							finishedWork = true;
 						});	
 					}
+
+					finishedWork = true;
 				}
 			}
 		}

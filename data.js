@@ -1,53 +1,7 @@
-var mongodb = require('mongodb'),
+var inspector = require('./inspector.js'),
+	mongodb = require('mongodb'),
 	Db = require('mongodb').Db,
 	dbConnections = [];
-
-function _extractQueryKeysFromQuery(query, keys) {
-	function isValueTypeOfObject(key, query) {
-		if (typeof query[key] === "object" && 
-			(query[key] instanceof RegExp === false)) {
-				return true;
-		}
-
-		return false;
-	}
-
-	function isValueOperator(key, query) {
-		if (query[key] !== null && Object.keys(query[key]).toString().indexOf("$") > -1) {
-			return true;
-		}
-
-		return false;
-	}
-
-	function isValueObjectId(key, query) {
-		if (query[key] !== null && Object.keys(query[key]).toString().indexOf("_bsontype") > -1) {
-			return true;
-		}
-
-		return false;
-	}
-
-	for (var key in query) {
-		if (key !== '$explain') {			
-			if (isValueTypeOfObject(key, query) && !isValueOperator(key, query) && !isValueObjectId(key, query)) {
-				_extractQueryKeysFromQuery(query[key], keys);
-			} else {
-				if (keys.indexOf(key) === -1) {
-					keys.push(key);
-				}
-			}
-		}
-	}
-
-	return keys;
-}
-
-function closeAllDbConnections() {
-	for (var i = 0; i < dbConnections.length; i++) {
-		dbConnections[i].close();
-	};
-}
 
 function connect(hostName, port, dbName, username, password, callback) {
 	var server = new mongodb.Server(hostName, port);
@@ -60,11 +14,17 @@ function connect(hostName, port, dbName, username, password, callback) {
 
 		db.authenticate(username, password, function(err, result) {
 			console.log('connected to mongodb: ' + client.databaseName + ' --- host: ' + client.serverConfig.host + ':' + client.serverConfig.port);
-			callback(client);
+			return callback(client);
 		});
 	});
 
 	dbConnections.push(db);
+}
+
+function closeAllDbConnections() {
+	for (var i = 0; i < dbConnections.length; i++) {
+		dbConnections[i].close();
+	};
 }
 
 function getIndexesForCollection(client, collectionName, callback) {
@@ -81,20 +41,8 @@ function getIndexesForCollection(client, collectionName, callback) {
 			indexes.push(indexInfo[key][0][0]);
 		}
 
-		callback(indexes);
+		return callback(indexes);
 	}
-}
-
-function getMissingIndexes(indexes, queryKeys) {
-	var missingIndexes = [];
-
-	queryKeys.forEach(function(key) {
-		if (indexes.indexOf(key) === -1 && missingIndexes.indexOf(key) === -1) {
-			missingIndexes.push(key);
-		}
-	});
-
-	return missingIndexes;
 }
 
 function findAllSystemProfileQueryEntries(client, callback) {
@@ -118,49 +66,19 @@ function findAllSystemProfileQueryEntries(client, callback) {
 			}
 		}
 
-		callback(queryEntries);
+		return callback(queryEntries);
 	}
-}
-
-function parseQueryEntries(queryEntries) {
-	var parsedQueryEntries = [];
-
-	for (var queryEntry in queryEntries) {
-		var parsedQueryEntry = {};
-		var query = queryEntries[queryEntry].query;
-
-		for (var key in query) {
-			if (key === "$explain") {
-				continue;
-			}
-			
-			if (key === "query" || key === "$query") {
-				parsedQueryEntry["query"] = query[key];
-				continue;
-			}
-
-			if (key === "orderby" || key === "$orderby") {				
-				parsedQueryEntry["sort"] = query[key];
-				parsedQueryEntries.push({ "collection" : queryEntries[queryEntry].collection, "query" : parsedQueryEntry});
-				continue;
-			}
-
-			parsedQueryEntries.push({ "collection" : queryEntries[queryEntry].collection, "query" : query });
-		}
-	}
-
-	return parsedQueryEntries;
 }
 
 function getCollectionDocumentsCount(client, collectionName, callback) {
 	var collection = new mongodb.Collection(client, collectionName);
 
 	collection.count(function(err, count) {
-		callback(count);
+		return callback(count);
 	});
 }
 
-function callExplainOnQueries(client, parsedQueries, q, callback) {
+function callExplainOnQueries(client, parsedQueries, queue, callback) {
 	function createSortOptions(sortEntries) {
 		// options format: { "sort" : [['field1', 'asc'], ['field2', 'desc']] }
 		var sortFields = [];
@@ -192,7 +110,7 @@ function callExplainOnQueries(client, parsedQueries, q, callback) {
 		var collection = new mongodb.Collection(client, collectionName);
 		var fullQuery = client.databaseName + '.' + collectionName + '.find(' + JSON.stringify(query) + ')';
 
-		var extractedKeys = _extractQueryKeysFromQuery(query, []);
+		var extractedKeys = inspector.extractQueryKeysFromQuery(query, []);
 
 		(function(query, collection, fullQuery, extractedKeys) {
 			var options = {};
@@ -212,18 +130,15 @@ function callExplainOnQueries(client, parsedQueries, q, callback) {
 				});
 			}
 
-			q.push(getExplainResult, callback);
+			queue.push(getExplainResult, callback);
 
 		})(query, collection, fullQuery, extractedKeys);
 	}
 }
-
 
 exports.connect = connect;
 exports.closeAllDbConnections = closeAllDbConnections;
 exports.findAllSystemProfileQueryEntries = findAllSystemProfileQueryEntries;
 exports.callExplainOnQueries = callExplainOnQueries;
 exports.getIndexesForCollection = getIndexesForCollection;
-exports.getMissingIndexes = getMissingIndexes;
-exports.parseQueryEntries = parseQueryEntries;
 exports.getCollectionDocumentsCount = getCollectionDocumentsCount;

@@ -82,7 +82,7 @@ function getMissingIndexes(indexes, queryKeys) {
 }
 
 function queryPerformedFullTableScan(explainResult, documentCount) {
-	if (explainResult.explaination.cursor === 'BasicCursor' || explainResult.explaination.nscanned === documentCount) {
+	if (explainResult.explaination.cursor === 'BasicCursor' || explainResult.explaination.nscannedObjects === documentCount) {
 		return true;
 	}
 

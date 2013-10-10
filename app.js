@@ -6,13 +6,16 @@ var data = require('./data.js'),
 
 // TODO:
 
+// - add white/blacklist
 // - write more tests/fix tests
+// - rename keys ot fields
 // - update readme file
 // - better logging
 // - logging for teamcity
+// - "distinct" queries ASAP
+// - NPM module
 
 var dbs = cfg.mongo.dbs;
-var finishedWork = false;
 
 var queue = async.queue(function(task, callback) {
 	task(function(result) {
@@ -21,15 +24,6 @@ var queue = async.queue(function(task, callback) {
 }, 1);
 
 // using queue to makes sure that db connections are closed after all async work is done.
-queue.drain = function() {
-	setInterval(function() {
-		if (finishedWork) {
-			console.log('processing finished');
-			data.closeAllDbConnections();
-			clearInterval(this);
-		}
-	}, 1000);
-}
 
 for (var i=0; i < dbs.length; i++) {
 	var dbName = dbs[i].dbName || '';
@@ -47,8 +41,6 @@ for (var i=0; i < dbs.length; i++) {
 			data.callExplainOnQueries(client, parsedQueries, queue, finishedExplain);
 
 			function finishedExplain(explainResult) {
-				finishedWork = false;
-
 				data.getCollectionDocumentsCount(client, explainResult.collection, countResult);
 
 				function countResult(documentCount) {
@@ -58,13 +50,16 @@ for (var i=0; i < dbs.length; i++) {
 							var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
 
 							log.toFile(logEntry);
-							finishedWork = true;
 						});	
 					}
-
-					finishedWork = true;
 				}
 			}
 		}
 	}
+}
+
+queue.drain = function() {
+	console.log('processing finished');
+	data.closeAllDbConnections();
+	clearInterval(this);
 }

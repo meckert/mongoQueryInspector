@@ -40,8 +40,7 @@ config.mongo.port = '27017';
 // Specify all the databases you want to analyze.
 // If you use authentication you need to add username and password. If you don't use authentication, omit username and password.
 config.mongo.dbs =  [
-								{dbName : 'blog', username: 'blog', password: 'qwer'},
-								{dbName : 'enron', username: 'enron', password: 'qwer'},
+								{dbName : 'test', username: 'test', password: 'test'},
 							]
 ```
 
@@ -52,4 +51,4 @@ Start app.js with node:
 $node app.js
 ```
 
-If a query is detected that is not using an index, a log entry will be added to the log file you specified in the configuration.
+If a query is detected that is not using an index, a log entry is written to console and to the log file you specified in the configuration.

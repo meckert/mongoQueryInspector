@@ -39,7 +39,7 @@ function _logEntryExists(logData) {
 		return false;
 	}
 
-	// { collection: 'blog', fields: 'a,b,c'}
+	// { collection: 'test', fields: 'a,b,c'}
 	var exists = logEntries.some(function(element, index, array) {
 		if (element.collection === logData.collectionName && element.fields.toString() === logData.missingIndexes.toString()) {
 			return true;

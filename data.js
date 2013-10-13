@@ -3,7 +3,6 @@ var inspector = require('./inspector.js'),
 	Db = require('mongodb').Db,
 	dbConnections = [];
 
-// use MongoClient
 function connect(hostName, port, dbName, username, password, callback) {
 	var server = new mongodb.Server(hostName, port);
 	var db = new Db(dbName, server, {safe: true});
@@ -11,7 +10,6 @@ function connect(hostName, port, dbName, username, password, callback) {
 	db.open(function(err, client) {
 		if (err) {
 			throw err;
-			//callback(err)
 		}
 
 		db.authenticate(username, password, function(err, result) {
@@ -62,7 +60,6 @@ function findAllSystemProfileQueryEntries(client, callback) {
 			var query = allQueryEntries[entry].query;
 
 			for (var key in query) {
-				// Do we need this?
 				if (key !== '$query' && key !== '$explain') {
 					queryEntries.push({ "collection" : collection, "query" : query });
 				}

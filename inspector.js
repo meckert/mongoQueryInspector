@@ -28,7 +28,7 @@ function parseQueryEntries(queryEntries) {
 	return parsedQueryEntries;
 }
 
-function extractQueryKeysFromQuery(query, keys) {
+function extractFieldsFromQuery(query, fields) {
 	function isValueTypeOfObject(key, query) {
 		if (typeof query[key] === "object" && 
 			(query[key] instanceof RegExp === false)) {
@@ -57,24 +57,24 @@ function extractQueryKeysFromQuery(query, keys) {
 	for (var key in query) {
 		if (key !== '$explain') {			
 			if (isValueTypeOfObject(key, query) && !isValueOperator(key, query) && !isValueTypeOfObjectId(key, query)) {
-				extractQueryKeysFromQuery(query[key], keys);
+				extractFieldsFromQuery(query[key], fields);
 			} else {
-				if (keys.indexOf(key) === -1) {
-					keys.push(key);
+				if (fields.indexOf(key) === -1) {
+					fields.push(key);
 				}
 			}
 		}
 	}
 
-	return keys;
+	return fields;
 }
 
-function getMissingIndexes(indexes, queryKeys) {
+function getMissingIndexes(indexes, queryFields) {
 	var missingIndexes = [];
 
-	queryKeys.forEach(function(key) {
-		if (indexes.indexOf(key) === -1 && missingIndexes.indexOf(key) === -1) {
-			missingIndexes.push(key);
+	queryFields.forEach(function(field) {
+		if (indexes.indexOf(field) === -1 && missingIndexes.indexOf(field) === -1) {
+			missingIndexes.push(field);
 		}
 	});
 
@@ -92,4 +92,4 @@ function queryPerformedFullTableScan(explainResult, documentCount) {
 exports.parseQueryEntries = parseQueryEntries;
 exports.getMissingIndexes = getMissingIndexes;
 exports.queryPerformedFullTableScan = queryPerformedFullTableScan;
-exports.extractQueryKeysFromQuery = extractQueryKeysFromQuery;
+exports.extractFieldsFromQuery = extractFieldsFromQuery;

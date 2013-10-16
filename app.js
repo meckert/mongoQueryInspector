@@ -6,11 +6,7 @@ var data = require('./data.js'),
 
 // TODO:
 
-// - add ignorelist
-// - better logging
-// - logging for teamcity
 // - "distinct" queries ASAP
-// - NPM module
 
 var dbs = cfg.mongo.dbs;
 
@@ -41,17 +37,13 @@ for (var i=0; i < dbs.length; i++) {
 			data.callExplainOnQueries(client, parsedQueries, queue, finishedExplain);
 
 			function finishedExplain(explainResult) {
-				data.getCollectionDocumentsCount(client, explainResult.collection, countResult);
+				if (inspector.queryPerformedFullTableScan(explainResult)) {
+					data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
+						var missingIndexes = inspector.getMissingIndexes(indexes, explainResult.queryFields);
+						var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
 
-				function countResult(documentCount) {
-					if (inspector.queryPerformedFullTableScan(explainResult, documentCount)) {
-						data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
-							var missingIndexes = inspector.getMissingIndexes(indexes, explainResult.queryFields);
-							var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
-
-							log.toFile(logEntry);
-						});	
-					}
+						log.logError(logEntry);
+					});	
 				}
 			}
 		}
@@ -60,6 +52,6 @@ for (var i=0; i < dbs.length; i++) {
 
 // using queue to make sure that db connections are closed after all async work is done.
 queue.drain = function() {
-	console.log('processing finished');
+	log.logInfo('processing finished')
 	data.closeAllDbConnections();
 }

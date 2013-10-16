@@ -1,4 +1,5 @@
 var inspector = require('./inspector.js'),
+	log = require('./logger.js'),
 	mongodb = require('mongodb'),
 	Db = require('mongodb').Db,
 	dbConnections = [];
@@ -13,7 +14,7 @@ function connect(hostName, port, dbName, username, password, callback) {
 		}
 
 		db.authenticate(username, password, function(err, result) {
-			console.log('connected to mongodb: ' + client.databaseName + ' --- host: ' + client.serverConfig.host + ':' + client.serverConfig.port);
+			log.logInfo('connected to database: ' + client.databaseName + ' --- host: ' + client.serverConfig.host + ':' + client.serverConfig.port);
 			return callback(client);
 		});
 	});
@@ -68,14 +69,6 @@ function findAllSystemProfileQueryEntries(client, callback) {
 
 		return callback(queryEntries);
 	}
-}
-
-function getCollectionDocumentsCount(client, collectionName, callback) {
-	var collection = new mongodb.Collection(client, collectionName);
-
-	collection.count(function(err, count) {
-		return callback(count);
-	});
 }
 
 function callExplainOnQueries(client, parsedQueries, queue, callback) {
@@ -141,4 +134,3 @@ exports.closeAllDbConnections = closeAllDbConnections;
 exports.findAllSystemProfileQueryEntries = findAllSystemProfileQueryEntries;
 exports.callExplainOnQueries = callExplainOnQueries;
 exports.getIndexesForCollection = getIndexesForCollection;
-exports.getCollectionDocumentsCount = getCollectionDocumentsCount;

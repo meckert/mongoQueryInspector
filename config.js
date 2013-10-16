@@ -8,8 +8,7 @@ config.mongo = {};
 config.mongo.uri = '127.0.0.1';
 config.mongo.port = '27017';
 config.mongo.dbs =  [
-						{ dbName : 'blog', username: 'blog', password: 'qwer' },
-						{ dbName : 'enron', username: 'enron', password: 'qwer' },
+						//{ dbName : 'test', username: 'test', password: 'test' }
 					]
 
 module.exports = config;

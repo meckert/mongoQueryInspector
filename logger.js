@@ -39,9 +39,9 @@ function _logEntryExists(logData) {
 		return false;
 	}
 
-	// { collection: 'blog', keys: 'a,b,c'}
+	// { collection: 'test', fields: 'a,b,c'}
 	var exists = logEntries.some(function(element, index, array) {
-		if (element.collection === logData.collectionName && element.keys.toString() === logData.missingIndexes.toString()) {
+		if (element.collection === logData.collectionName && element.fields.toString() === logData.missingIndexes.toString()) {
 			return true;
 		}
 	});
@@ -58,7 +58,7 @@ function logToFile(logData) {
 	_createLogFileIfNotExists(fullLogFilePath);
 
 	if (!_logEntryExists(logData)) {
-		logEntries.push({ "collection": logData.collectionName, "keys": logData.missingIndexes });
+		logEntries.push({ "collection": logData.collectionName, "fields": logData.missingIndexes });
 
 		var logEntry = mustache.render(template, logData);
 		_appendToLogFile(fullLogFilePath, logEntry);

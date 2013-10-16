@@ -6,10 +6,7 @@ var data = require('./data.js'),
 
 // TODO:
 
-// - add white/blacklist
-// - write more tests/fix tests
-// - rename keys ot fields
-// - update readme file
+// - add ignorelist
 // - better logging
 // - logging for teamcity
 // - "distinct" queries ASAP
@@ -17,13 +14,16 @@ var data = require('./data.js'),
 
 var dbs = cfg.mongo.dbs;
 
+if (dbs.length === 0) {
+	console.log("No Database specified in config.js! Add at least one Database to config.mongo.dbs array.");
+	return;
+}
+
 var queue = async.queue(function(task, callback) {
 	task(function(result) {
 		return callback(result);
 	});
 }, 1);
-
-// using queue to makes sure that db connections are closed after all async work is done.
 
 for (var i=0; i < dbs.length; i++) {
 	var dbName = dbs[i].dbName || '';
@@ -46,7 +46,7 @@ for (var i=0; i < dbs.length; i++) {
 				function countResult(documentCount) {
 					if (inspector.queryPerformedFullTableScan(explainResult, documentCount)) {
 						data.getIndexesForCollection(client, explainResult.collection, function(indexes) {
-							var missingIndexes = inspector.getMissingIndexes(indexes, explainResult.queryKeys);
+							var missingIndexes = inspector.getMissingIndexes(indexes, explainResult.queryFields);
 							var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
 
 							log.toFile(logEntry);
@@ -58,8 +58,8 @@ for (var i=0; i < dbs.length; i++) {
 	}
 }
 
+// using queue to make sure that db connections are closed after all async work is done.
 queue.drain = function() {
 	console.log('processing finished');
 	data.closeAllDbConnections();
-	clearInterval(this);
 }

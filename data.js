@@ -3,7 +3,6 @@ var inspector = require('./inspector.js'),
 	Db = require('mongodb').Db,
 	dbConnections = [];
 
-// use MongoClient
 function connect(hostName, port, dbName, username, password, callback) {
 	var server = new mongodb.Server(hostName, port);
 	var db = new Db(dbName, server, {safe: true});
@@ -11,7 +10,6 @@ function connect(hostName, port, dbName, username, password, callback) {
 	db.open(function(err, client) {
 		if (err) {
 			throw err;
-			//callback(err)
 		}
 
 		db.authenticate(username, password, function(err, result) {
@@ -62,7 +60,6 @@ function findAllSystemProfileQueryEntries(client, callback) {
 			var query = allQueryEntries[entry].query;
 
 			for (var key in query) {
-				// Do we need this?
 				if (key !== '$query' && key !== '$explain') {
 					queryEntries.push({ "collection" : collection, "query" : query });
 				}
@@ -99,10 +96,10 @@ function callExplainOnQueries(client, parsedQueries, queue, callback) {
 		return sortFields;
 	}
 
-	function addSortKeysToExtractedKeys(sortQuery, extractedKeys) {
-		var sortKeys = Object.keys(sortQuery);
-			sortKeys.forEach(function(key) {
-				extractedKeys.push(key);	
+	function addSortFieldsToExtractedFields(sortQuery, extractedFields) {
+		var sortFields = Object.keys(sortQuery);
+			sortFields.forEach(function(field) {
+				extractedFields.push(field);
 		});
 	}
 
@@ -113,29 +110,29 @@ function callExplainOnQueries(client, parsedQueries, queue, callback) {
 		var collection = new mongodb.Collection(client, collectionName);
 		var fullQuery = client.databaseName + '.' + collectionName + '.find(' + JSON.stringify(query) + ')';
 
-		var extractedKeys = inspector.extractQueryKeysFromQuery(query, []);
+		var extractedFields = inspector.extractFieldsFromQuery(query, []);
 
-		(function(query, collection, fullQuery, extractedKeys) {
+		(function(query, collection, fullQuery, extractedFields) {
 			var options = {};
 			var sortQuery = parsedQueries[parsedQuery].query.sort;
 
 			if (sortQuery) {
 				options["sort"] = createSortOptions(sortQuery);
 				fullQuery += ".sort(" + JSON.stringify(sortQuery) + ")";
-				addSortKeysToExtractedKeys(sortQuery, extractedKeys);
+				addSortFieldsToExtractedFields(sortQuery, extractedFields);
 			}
 
 			function getExplainResult(fn) {
 				collection.find(query, options).explain(function(err, explaination) {
 					if (err) throw err;
 
-					fn({ 'collection' : collection.collectionName, 'query' : fullQuery, 'explaination' : explaination, 'queryKeys' : extractedKeys });
+					fn({ 'collection' : collection.collectionName, 'query' : fullQuery, 'explaination' : explaination, 'queryFields' : extractedFields });
 				});
 			}
 
 			queue.push(getExplainResult, callback);
 
-		})(query, collection, fullQuery, extractedKeys);
+		})(query, collection, fullQuery, extractedFields);
 	}
 }
 

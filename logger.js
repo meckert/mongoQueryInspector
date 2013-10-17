@@ -66,22 +66,22 @@ function logInfo(infoMessage) {
 }
 
 function logError(logData) {
-	var template = "\033[31mmissing index\033[39m\r\nQuery: {{&query}}\r\napply index on fields: {{&missingIndexes}}\r\n\r\n";
+	var errorHeaderTemplate = "\033[31mmissing index\033[39m\r\n";
+	var errorTemplate = "Query: {{&query}}\r\napply index on fields: {{&missingIndexes}}\r\n\r\n";
 	var teamCityTemplate = "##teamcity[missingIndex errorDetails='{{&query}}' applyIndexOn='{{&missingIndexes}} status='ERROR']";
-
-	var logEntry = mustache.render(template, logData);
-	var teamcityLogEntry = mustache.render(teamCityTemplate, logData);
 
 	if (!_logEntryExists(logData)) {
 		logEntries.push({ "collection": logData.collectionName, "fields": logData.missingIndexes });
 		
 		if (cfg.log.useTeamCityLog) {
+			var teamcityLogEntry = mustache.render(teamCityTemplate, logData);
 			console.log(teamcityLogEntry);
 		} else {
-			console.log(logEntry);
+			var header = mustache.render(errorHeaderTemplate, logData);
+			var logEntry = mustache.render(errorTemplate, logData);
+			console.log(header + logEntry);
+			_logToFile(logEntry);
 		}
-		
-		_logToFile(logEntry);
 	}
 }
 

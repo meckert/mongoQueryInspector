@@ -2,7 +2,7 @@
 var fs = require('fs'),
 	path = require('path'),
 	mustache = require('mustache'),
-	cfg = require('./config.js'),
+	cfg = require('./config.json'),
 	logEntries = [];
 
 function _readLogFile(fullLogFilePath) {
@@ -59,7 +59,7 @@ function _logToFile(logEntry) {
 
 function logInfo(infoMessage) {
 	if (cfg.log.useTeamCityLog) {
-		console.log('##teamcity[' + infoMessage +']');
+		console.log('##teamcity[message text=\'' + infoMessage +'\']');
 	} else {
 		console.log(infoMessage);
 	}

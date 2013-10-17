@@ -1,17 +1,19 @@
 var data = require('./data.js'),
 	inspector = require('./inspector.js'),
 	log = require('./logger.js'),
-	cfg = require('./config.js'),
-	async = require('async');
+	cfg = require('./config.json'),
+	async = require('async'),
+    program = require('commander');
 
-// TODO:
 
-// - "distinct" queries ASAP
+program
+    .option('-u, --uri [full uri]', 'eg. mongodb://user:passwd@host:port/database')
+    .parse(process.argv);
 
-var dbs = cfg.mongo.dbs;
+var dbs = program.uri ? [program.uri] : cfg.databases;
 
 if (dbs.length === 0) {
-	console.log("No Database specified in config.js! Add at least one Database to config.mongo.dbs array.");
+	console.log("No Database specified in config.js! Add at least one Database to config.databases array.");
 	return;
 }
 
@@ -21,12 +23,9 @@ var queue = async.queue(function(task, callback) {
 	});
 }, 1);
 
+log.logInfo('processing started');
 for (var i=0; i < dbs.length; i++) {
-	var dbName = dbs[i].dbName || '';
-	var username = dbs[i].username || '';
-	var password = dbs[i].password || '';
-
-	data.connect(cfg.mongo.uri, cfg.mongo.port, dbName, username, password, connected);
+    data.connect(dbs[i], connected);
 
 	function connected(client) {
 		data.findAllSystemProfileQueryEntries(client, foundSystemProfileQueryEntries);

@@ -4,22 +4,19 @@ var inspector = require('./inspector.js'),
 	Db = require('mongodb').Db,
 	dbConnections = [];
 
-function connect(hostName, port, dbName, username, password, callback) {
-	var server = new mongodb.Server(hostName, port);
-	var db = new Db(dbName, server, {safe: true});
+function connect(uri, callback) {
+    log.logInfo('connecting to database: ' + uri);
 
-	db.open(function(err, client) {
-		if (err) {
-			throw err;
-		}
+    mongodb.MongoClient.connect(uri, function(err, db) {
+        if (err) {
+            log.logInfo('Could not connect to database: ' + uri);
+            return callback();
+        }
 
-		db.authenticate(username, password, function(err, result) {
-			log.logInfo('connected to database: ' + client.databaseName + ' --- host: ' + client.serverConfig.host + ':' + client.serverConfig.port);
-			return callback(client);
-		});
-	});
-
-	dbConnections.push(db);
+        log.logInfo('connected to database: ' + uri);
+        dbConnections.push(db);
+        callback(db);
+    });
 }
 
 function closeAllDbConnections() {
@@ -47,7 +44,7 @@ function getIndexesForCollection(client, collectionName, callback) {
 }
 
 function findAllSystemProfileQueryEntries(client, callback) {
-	var systemProfile = new mongodb.Collection(client, 'system.profile');
+	var systemProfile = client.collection('system.profile');
 
 	systemProfile.find({op: "query", "ns" : {$not : /\.system\./}}).toArray(foundSystemProfileQueryEntries);
 

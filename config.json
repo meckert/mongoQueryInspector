@@ -1,0 +1,10 @@
+{
+	"log": {
+		"path": "",
+		"fileName": "",
+		"useTeamCityLog": true
+	},
+    "databases": [
+        "mongodb://user:passwd@host:port/database"
+    ]
+}

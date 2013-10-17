@@ -1,18 +1,19 @@
 {
-	"name": "mongo-query-inspector",
-	"version": "0.2.3",
-	"author": {
-		"name": "Mathias Eckert",
-		"email": "mathias.eckert@gmail.com"
-	},
-	"description": "a tool for finding mongo queries not using an index",
-	"dependencies": {
-		"mongodb": "1.3.11",
-		"mustache": "0.7.2",
-		"async": "0.2.9"
-	},
-	"devDependencies": {
-		"mocha": "*",
-		"expect.js": "*"
-	}
+  "name": "mongo-query-inspector",
+  "version": "0.2.3",
+  "author": {
+    "name": "Mathias Eckert",
+    "email": "mathias.eckert@gmail.com"
+  },
+  "description": "a tool for finding mongo queries not using an index",
+  "dependencies": {
+    "mongodb": "1.3.11",
+    "mustache": "0.7.2",
+    "async": "0.2.9",
+    "commander": "~2.0.0"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "expect.js": "*"
+  }
 }

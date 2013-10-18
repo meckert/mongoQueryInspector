@@ -52,9 +52,7 @@ for (var i=0; i < dbs.length; i++) {
 
 						log.logError(logEntry);
 					});
-				} else {
-                    return close(client);
-                }
+				}
 			}
 		}
 	}

@@ -41,12 +41,18 @@ For logging and database configuration edit the [config.json](https://github.com
 ]
 
 You can specify as many databases as you like. Each DB in the databases array will be analyzed by mongo query inspector.
+```
 
 ### Usage
 
-Start app.js with node:
+Start app.js with node
 ```
 $node app.js
+```
+
+Start app.js with mongo connection string parameter
+```
+$node app.js --uri mongodb://user:passwd@host:port/database
 ```
 
 If a query is detected that is not using an index, a log entry is written to console and to the log file you specified in the configuration.

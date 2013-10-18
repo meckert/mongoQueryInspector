@@ -14,7 +14,7 @@ In order to analyze all queries for a specific database, follow these steps:
 
 2. Open fire! Start using your application/run your queries.
 
-3. Edit the config.js file and change it according to your MongoDB setup.
+3. Edit the config.json file and change it according to your MongoDB setup.
 
 4. Start mongo query inspector and analyze the results
 
@@ -29,20 +29,18 @@ npm install
 
 ### Configuration
 
-For logging and database configuration edit the [config.js](https://github.com/meckert/mongoQueryInspector/blob/master/config.js) file:
+For logging and database configuration edit the [config.json](https://github.com/meckert/mongoQueryInspector/blob/master/config.json) file:
 ```
-config.log.path = 'c:\\temp'; // The path where the log file will be created. Use '\\' when specifying the path.
-config.log.fileName = 'mongoQueryInspector.log'; // The name of the log file to be created.
+"log": {
+	"path": "c:\\temp" - The path where the log file will be created. Use '\\' when specifying the path.
+	"fileName": "mongoQueryInspector.log" - The name of the log file to be created.
+	"useTeamCityLog": true - [true]=logging to console in Team City format. No logs will be written to the log file; [false]=normal logging to console.
+},
+"databases": [
+	"mongodb://user:passwd@host:port/database"
+]
 
-config.mongo = {};
-config.mongo.uri = '127.0.0.1';
-config.mongo.port = '27017';
-// Specify all the databases you want to analyze.
-// If you use authentication you need to add username and password. If you don't use authentication, omit username and password.
-config.mongo.dbs =  [
-								{dbName : 'test', username: 'test', password: 'test'},
-							]
-```
+You can specify as many databases as you like. Each DB in the databases array will be analyzed by mongo query inspector.
 
 ### Usage
 

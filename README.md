@@ -41,6 +41,7 @@ For logging and database configuration edit the [config.json](https://github.com
 ]
 
 You can specify as many databases as you like. Each DB in the databases array will be analyzed by mongo query inspector.
+```
 
 ### Usage
 

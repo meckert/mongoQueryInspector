@@ -68,14 +68,18 @@ function logInfo(infoMessage) {
 function logError(logData) {
 	var errorHeaderTemplate = "\033[31mmissing index\033[39m\r\n";
 	var errorTemplate = "Query: {{&query}}\r\napply index on fields: {{&missingIndexes}}\r\n\r\n";
-	var teamCityTemplate = "##teamcity[missingIndex errorDetails='{{&query}}' applyIndexOn='{{&missingIndexes}} status='ERROR']";
+	var teamCityTemplate = "##teamcity[message text='missingIndex' errorDetails='{{&query}}; Fields: {{&missingIndexes}}' status='ERROR']";
+        var teamcityBuildError = "##teamcity[buildProblem description='Missing indexes.' identity='{{&missingIndexes}}']";
 
 	if (!_logEntryExists(logData)) {
 		logEntries.push({ "collection": logData.collectionName, "fields": logData.missingIndexes });
 		
 		if (cfg.log.useTeamCityLog) {
 			var teamcityLogEntry = mustache.render(teamCityTemplate, logData);
-			console.log(teamcityLogEntry);
+
+            console.log(mustache.render(teamcityBuildError, logData));
+
+            console.log(teamcityLogEntry);
 		} else {
 			var header = mustache.render(errorHeaderTemplate, logData);
 			var logEntry = mustache.render(errorTemplate, logData);

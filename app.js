@@ -27,10 +27,19 @@ log.logInfo('processing started');
 for (var i=0; i < dbs.length; i++) {
     data.connect(dbs[i], connected);
 
+    function close(db) {
+        log.logInfo('processing finished for: ' + db.databaseName);
+        db.close();
+    }
+
 	function connected(client) {
 		data.findAllSystemProfileQueryEntries(client, foundSystemProfileQueryEntries);
 
 		function foundSystemProfileQueryEntries(queryEntries) {
+            if (!queryEntries || queryEntries.length === 0) {
+                return close(client);
+            }
+
 			var parsedQueries = inspector.parseQueryEntries(queryEntries);
 			
 			data.callExplainOnQueries(client, parsedQueries, queue, finishedExplain);
@@ -42,12 +51,15 @@ for (var i=0; i < dbs.length; i++) {
 						var logEntry = { 'collectionName' : explainResult.collection, 'query' : explainResult.query, 'missingIndexes' : missingIndexes };
 
 						log.logError(logEntry);
-					});	
-				}
+					});
+				} else {
+                    return close(client);
+                }
 			}
 		}
 	}
 }
+
 
 // using queue to make sure that db connections are closed after all async work is done.
 queue.drain = function() {

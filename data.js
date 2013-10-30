@@ -2,6 +2,7 @@ var inspector = require('./inspector.js'),
 	log = require('./logger.js'),
 	mongodb = require('mongodb'),
 	Db = require('mongodb').Db,
+	_ = require('lodash'),
 	dbConnections = [];
 
 function connect(uri, callback) {
@@ -58,6 +59,15 @@ function findAllSystemProfileQueryEntries(client, callback) {
 			var query = allQueryEntries[entry].query;
 
 			for (var key in query) {
+				var keys = _.keys(query[key]);
+				var operator =_.find(keys, function(key) {
+					return /^\$size/.test(key);
+				});
+
+				if (operator) {
+					continue;
+				}
+
 				if (key !== '$query' && key !== '$explain') {
 					queryEntries.push({ "collection" : collection, "query" : query });
 				}
